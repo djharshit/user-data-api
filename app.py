@@ -1,26 +1,67 @@
-from flask import Flask, render_template, request, redirect, jsonify
-import pymongo
+"""This module is used to create a REST API using Flask and MongoDB"""
+
 from datetime import datetime
+import bson
+
+import pymongo
+from flask import Flask, jsonify, request
 
 
 class Connection:
+    """This class is used to connect to the database and perform operations on it
+    """
+
     def __init__(self) -> None:
-        self.__myClient = pymongo.MongoClient(
-            host='mongodb://127.0.0.1:27017/')
-        self.__myDB = self.__myClient.get_database('data')
-        self.myCollection = self.__myDB.get_collection('identity')
+        """This constructor is used to connect to the database and get the collection
+        """
+        self.__my_client = pymongo.MongoClient(
+            host='mongodb://172.18.0.2:27017/')
+        self.__my_db = self.__my_client.get_database('data')
+        self.my_collection = self.__my_db.get_collection('identity')
 
     def get_all_document(self) -> list:
-        for i in self.myCollection.find():
-            i['_id'] = str(i['_id'])
+        """Gets all the documents from the collection
+
+        Returns:
+            list: A list of all the documents
+        """
+        for i in self.my_collection.find():
+            i['_id'] = str(i['_id'])  # Convert ObjectId to string
             yield i
 
+    def get_one_document(self, doc_id: str) -> dict:
+        """Returns a document from the collection
+
+        Args:
+            doc_id (str): The doc_id of the document to be returned
+
+        Returns:
+            dict: The document
+        """
+
+        try:
+            x = self.my_collection.find_one({'_id': bson.ObjectId(doc_id)})
+            x['_id'] = str(x['_id'])  # Convert ObjectId to string
+            return x
+
+        except bson.errors.InvalidId:
+            return None
+
     def insert_in_collection(self, document: dict) -> bool:
+        """Inserts a document in the collection
+
+        Args:
+            document (dict): A dictionary containing the document to be inserted
+
+        Returns:
+            bool: Returns True if the document is inserted successfully, else False
+        """
+
         name = document.get('name')
         email = document.get('email')
         password = document.get('password')
 
-        x = self.myCollection.insert_one({
+        x = self.my_collection.insert_one({
             'name': name,
             'email': email,
             'password': password
@@ -28,16 +69,57 @@ class Connection:
 
         return x.acknowledged
 
-    def is_connected(self):
+    def delete_one_document(self, doc_id: str) -> bool:
+        """Deletes a document from the collection
+
+        Args:
+            doc_id (str): The doc_id of the document to be deleted
+
+        Returns:
+            bool: Returns True if the document is deleted successfully, else False
+        """
         try:
-            self.__myClient.get_database('data')
+            x = self.my_collection.delete_one({'_id': bson.ObjectId(doc_id)})
+            return x.acknowledged
+
+        except bson.errors.InvalidId:
+            return False
+
+    def update_one_document(self, doc_id: str, document: dict) -> bool:
+        """Updates a document in the collection
+
+        Args:
+            doc_id (str): The doc_id of the document to be updated
+            document (dict): A dictionary containing the updated document
+
+        Returns:
+            bool: Returns True if the document is updated successfully, else False
+        """
+        try:
+            x = self.my_collection.update_one(
+                {'_id': bson.ObjectId(doc_id)}, {'$set': document})
+            return x.acknowledged
+
+        except bson.errors.InvalidId:
+            return False
+
+    def is_connected(self) -> bool:
+        """Checks if the connection is established or not
+
+        Returns:
+            bool: Returns True if the connection is established, else False
+        """
+        try:
+            self.__my_client.server_info()
             return True
 
-        except:
+        except pymongo.errors.ServerSelectionTimeoutError:
             return False
 
     def close_connection(self):
-        self.__myClient.close()
+        """Closes the connection with the database
+        """
+        self.__my_client.close()
 
 
 app = Flask(__name__)
@@ -45,11 +127,13 @@ app = Flask(__name__)
 
 @app.route('/users', methods=['GET', 'POST'])
 def func1():
+    """Function to handle GET and POST requests on /users route
+    """
     if request.method == 'GET':
         all_data = client.get_all_document()
         result = jsonify({
             'Datetime': datetime.now(),
-            'AllUsers': [i for i in all_data]
+            'AllUsers': list(all_data)
         })
 
     elif request.method == 'POST':
@@ -62,26 +146,35 @@ def func1():
 
         result = jsonify({
             'Datetime': datetime.now(),
-            'Succeed': x 
+            'Succeed': x
         })
 
     return result
 
-@app.route('/users/<string:id>', methods=['GET', 'PUT', 'DELETE'])
-def func2(id: str):
+
+@app.route('/users/<string:doc_id>', methods=['GET', 'PUT', 'DELETE'])
+def func2(doc_id: str):
+    """Function to handle GET, PUT and DELETE requests on /users/<string:doc_id> route
+    """
     if request.method == 'GET':
+        x = client.get_one_document(doc_id)
         result = {
-            'Datetime': datetime.now()
+            'Datetime': datetime.now(),
+            'User': x
         }
 
     elif request.method == 'PUT':
+        x = client.update_one_document(doc_id, request.form)
         result = {
-            'Datetime': datetime.now()
+            'Datetime': datetime.now(),
+            'Updated': x
         }
 
     elif request.method == 'DELETE':
+        x = client.delete_one_document(doc_id)
         result = {
-            'Datetime': datetime.now()
+            'Datetime': datetime.now(),
+            'Deleted': x
         }
 
     return jsonify(result)
@@ -89,7 +182,10 @@ def func2(id: str):
 
 if __name__ == '__main__':
     client = Connection()
+    if client.is_connected():
+        print('Connected to the database')
+        app.run(host='0.0.0.0', port=5000, debug=True)
+        client.close_connection()
 
-    app.run(host='127.0.0.1', port=5000, debug=True)
-
-    client.close_connection()
+    else:
+        print('Could not connect to the database')
