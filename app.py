@@ -1,8 +1,8 @@
 """This module is used to create a REST API using Flask and MongoDB"""
 
 from datetime import datetime
-import bson
 
+import bson
 import pymongo
 from flask import Flask, jsonify, request
 
@@ -15,7 +15,7 @@ class Connection:
         """This constructor is used to connect to the database and get the collection
         """
         self.__my_client = pymongo.MongoClient(
-            host='mongodb://172.18.0.2:27017/')
+            host='mongodb://127.0.0.1:27017/')
         self.__my_db = self.__my_client.get_database('data')
         self.my_collection = self.__my_db.get_collection('identity')
 
@@ -181,6 +181,7 @@ def func2(doc_id: str):
 
 
 if __name__ == '__main__':
+    print('Connecting to the database...')
     client = Connection()
     if client.is_connected():
         print('Connected to the database')
