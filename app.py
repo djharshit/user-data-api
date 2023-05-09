@@ -4,7 +4,7 @@ from datetime import datetime
 import argparse
 import bson
 import pymongo
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 
 
 class Connection:
@@ -19,7 +19,7 @@ class Connection:
         """
         self.__my_client = pymongo.MongoClient(
             host=host)
-        self.__my_db = self.__my_client.get_database('data')
+        self.__my_db = self.__my_client.get_default_database()
         self.my_collection = self.__my_db.get_collection('identity')
 
     def get_all_document(self) -> list:
@@ -128,6 +128,13 @@ class Connection:
 app = Flask(__name__)
 
 
+@app.route('/')
+def home_page():
+    """ Home page for documentation of the API
+    """
+    return render_template('index.html')
+
+
 @app.route('/users', methods=['GET', 'POST'])
 def func1():
     """Function to handle GET and POST requests on /users route
@@ -184,8 +191,8 @@ def func2(doc_id: str):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--host', type=str, default='mongodb://127.0.0.1:27017/',
-                    required=False, help='The host address of the database')
+parser.add_argument('--host', type=str, default='mongodb://127.0.0.1:27017/data',
+                    required=False, help='The mongodb connection string of the database')
 
 if __name__ == '__main__':
     args = parser.parse_args()
