@@ -1,5 +1,7 @@
-from datetime import datetime
+"""This module is used to create a REST API using Flask and MongoDB"""
 
+from datetime import datetime
+import argparse
 import bson
 import pymongo
 from flask import Flask
@@ -10,11 +12,11 @@ class Connection:
     """This class is used to connect to the database and perform operations on it
     """
 
-    def __init__(self) -> None:
+    def __init__(self, host: str) -> None:
         """This constructor is used to connect to the database and get the collection
         """
         self.__my_client = pymongo.MongoClient(
-            host='mongodb://127.0.0.1:27017/')
+            host=host)
         self.__my_db = self.__my_client.get_database('data')
         self.my_collection = self.__my_db.get_collection('identity')
 
@@ -132,54 +134,82 @@ helloworld_parser.add_argument(
 helloworld_parser.add_argument(
     'password', type=str, help='Password of the person', location='form', required=True)
 
+arg_parser = argparse.ArgumentParser()
+arg_parser.add_argument('--host', type=str, default='mongodb://127.0.0.1:27017/',
+                        required=False, help='The host address of the database')
 
-class Users_1(Resource):
+
+class UserOne(Resource):
+    """
+    Class for /users endpoint of the API with GET and POST methods
+    """
+
     def get(self):
+        """
+        The GET method for /users endpoint of the API
+        """
         all_users = client.get_all_document()
         return {
             'Date': str(datetime.now()),
             'AllUsers': list(all_users)
         }
 
-    def put(self):
-        args = helloworld_parser.parse_args()
-        
+    def post(self):
+        """
+        The POST method for /users endpoint of the API
+        """
+        req_args = helloworld_parser.parse_args()
+
         document = {
-            'name': args.get('name'),
-            'email': args.get('email'),
-            'password': args.get('password')
-        }        
+            'name': req_args.get('name'),
+            'email': req_args.get('email'),
+            'password': req_args.get('password')
+        }
         x = client.insert_in_collection(document)
-        
+
         return {
             'Date': str(datetime.now()),
             'Succeed': x
         }
 
-class Users_2(Resource):
+
+class UserTwo(Resource):
+    """
+    Class for /users/<string:doc_id> endpoint of the API with GET, PUT and DELETE methods
+    """
+
     def get(self, doc_id):
+        """
+        The GET method for /users/<string:doc_id> endpoint of the API
+        """
         x = client.get_one_document(doc_id)
         return {
             'Date': str(datetime.now()),
             'User': x
         }
-        
+
     def put(self, doc_id):
-        args = helloworld_parser.parse_args()
-        
+        """
+        The PUT method for /users/<string:doc_id> endpoint of the API
+        """
+        req_args = helloworld_parser.parse_args()
+
         document = {
-            'name': args.get('name'),
-            'email': args.get('email'),
-            'password': args.get('password')
-        }        
+            'name': req_args.get('name'),
+            'email': req_args.get('email'),
+            'password': req_args.get('password')
+        }
         x = client.update_one_document(doc_id, document)
-        
+
         return {
             'Date': str(datetime.now()),
             'Succeed': x
         }
-        
+
     def delete(self, doc_id):
+        """
+        The DELETE method for /users/<string:doc_id> endpoint of the API
+        """
         x = client.delete_one_document(doc_id)
         return {
             'Date': str(datetime.now()),
@@ -187,12 +217,14 @@ class Users_2(Resource):
         }
 
 
-api.add_resource(Users_1, '/users')
-api.add_resource(Users_2, '/users/<string:doc_id>')
+api.add_resource(UserOne, '/users')
+api.add_resource(UserTwo, '/users/<string:doc_id>')
 
 if __name__ == '__main__':
+    cmd_args = arg_parser.parse_args()
     print('Connecting to the database...')
-    client = Connection()
+    client = Connection(host=cmd_args.host)
+
     if client.is_connected():
         print('Connected to the database')
         app.run(host='0.0.0.0', port=5000, debug=True)

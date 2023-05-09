@@ -1,15 +1,19 @@
 #!/bin/bash
 
-if docker network ls | awk '{print $2}' | grep -q "interCon"; then
+if docker network ls | awk '{print $2}' | grep -q "mynet"; then
         echo "Network found"
 else
         echo "Not found, creating network"
-        docker network create interCon
+        docker network create mynet
 fi
 
-docker build -t apiserver .
+if docker volume ls | awk '{print $2}' | grep -q "mongovol"; then
+        echo "volume found"
+else
+        echo "Not found, creating volume"
+        docker volume create mongovol
+fi
 
-docker run -d -p 27017:27017 --network=interCon mongo
-docker run -d -p 5000:5000 --network=interCon apiserver
+docker run -d -p 27017:27017 -v mongovol:/data/db --network=mynet mongo
 
 docker ps -a
