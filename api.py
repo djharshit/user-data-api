@@ -1,7 +1,8 @@
 """This module is used to create a REST API using Flask and MongoDB"""
 
-from datetime import datetime
 import argparse
+from datetime import datetime
+
 import bson
 import pymongo
 from flask import Flask
