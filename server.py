@@ -35,7 +35,6 @@ def home_page():
 def func1():
     """Function to handle GET and POST requests on /users route"""
     if request.method == "GET":
-        print(client.get_all_document())
         return jsonify(
             {"Datetime": datetime.now(), "AllUsers": client.get_all_document()}
         )
