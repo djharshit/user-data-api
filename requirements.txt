@@ -1,3 +1,5 @@
 flask
-flask-restful
+bson
+pydantic
+gunicorn
 pymongo

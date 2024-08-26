@@ -1,13 +1,20 @@
-FROM python
+FROM python:3.11-alpine
 
-ENV HOST="mongodb://127.0.0.1:27017/"
+LABEL org.opencontainers.image.source = "https://github.com/djharshit/user-data-api"
+LABEL maintainer="Harshit M"
 
-WORKDIR /home/user
+ARG PORT=${PORT}
+
+WORKDIR /home/app
 
 COPY . .
 
-RUN pip install -r requirements.txt
+RUN wget -q -t3 'https://packages.doppler.com/public/cli/rsa.8004D9FF50437357.key' -O /etc/apk/keys/cli@doppler-8004D9FF50437357.rsa.pub && \
+    echo 'https://packages.doppler.com/public/cli/alpine/any-version/main' | tee -a /etc/apk/repositories && \
+    apk add --no-cache doppler
 
-EXPOSE 5000
+RUN chmod +x install.sh && chmod +x run.sh && ./install.sh
 
-CMD python app.py --host $HOST
+EXPOSE ${PORT}
+
+CMD [ "./run.sh" ]
