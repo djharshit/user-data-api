@@ -35,7 +35,9 @@ def home_page():
 def func1():
     """Function to handle GET and POST requests on /users route"""
     if request.method == "GET":
-        return jsonify({"Datetime": datetime.now(), "AllUsers": list(client.get_all_document())})
+        return jsonify(
+            {"Datetime": datetime.now(), "AllUsers": list(client.get_all_document())}
+        )
 
     elif request.method == "POST":
         name: Optional[str] = request.form.get("name")
@@ -43,7 +45,15 @@ def func1():
         password: Optional[str] = request.form.get("password")
 
         if not name or not email or not password:
-            return jsonify({"Datetime": datetime.now(), "Error": "Please provide all the fields"}), 400
+            return (
+                jsonify(
+                    {
+                        "Datetime": datetime.now(),
+                        "Error": "Please provide all the fields",
+                    }
+                ),
+                400,
+            )
 
         user = UserModel(name=name, email=email, password=password)
         x: bool = client.insert_in_collection(user)
@@ -51,11 +61,14 @@ def func1():
         return jsonify({"Datetime": datetime.now(), "Succeed": x})
 
 
-@app.route("/users/<string:doc_id>", methods=["GET", "PUT", "DELETE"])  # type: ignore
+# type: ignore
+@app.route("/users/<string:doc_id>", methods=["GET", "PUT", "DELETE"])
 def func2(doc_id: str):
     """Function to handle GET, PUT and DELETE requests on /users/<string:doc_id> route"""
     if request.method == "GET":
-        return jsonify({"Datetime": datetime.now(), "User": client.get_one_document(doc_id)})
+        return jsonify(
+            {"Datetime": datetime.now(), "User": client.get_one_document(doc_id)}
+        )
 
     elif request.method == "PUT":
         name: str = request.form.get("name", "")

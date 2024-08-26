@@ -26,7 +26,9 @@ class Connection:
     def __init__(self, host: str) -> None:
         """This constructor is used to connect to the database and get the collection"""
         try:
-            self.my_collection: Collection[Any] = MongoClient(host=host).get_default_database().get_collection("identity")
+            self.my_collection: Collection[Any] = (
+                MongoClient(host=host).get_default_database().get_collection("identity")
+            )
             self.is_connected = True
         except PyMongoError:
             self.is_connected = False
@@ -64,7 +66,13 @@ class Connection:
             bool: Returns True if the document is inserted successfully, else False
         """
 
-        return self.my_collection.insert_one({"name": document.name, "email": document.email, "password": document.password}).acknowledged
+        return self.my_collection.insert_one(
+            {
+                "name": document.name,
+                "email": document.email,
+                "password": document.password,
+            }
+        ).acknowledged
 
     def delete_one_document(self, doc_id: str) -> bool:
         """Deletes a document from the collection
@@ -92,7 +100,9 @@ class Connection:
             bool: Returns True if the document is updated successfully, else False
         """
         try:
-            return self.my_collection.update_one({"_id": ObjectId(doc_id)}, {"$set": document}).acknowledged
+            return self.my_collection.update_one(
+                {"_id": ObjectId(doc_id)}, {"$set": document}
+            ).acknowledged
 
         except bsonErrors.InvalidId:
             return False
