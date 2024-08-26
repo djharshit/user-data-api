@@ -7,7 +7,7 @@ from typing import Optional
 
 from flask import Flask, jsonify, render_template, request
 
-from api import Connection, UserModel
+from api import Connection
 
 # Variables
 HOST: str = environ.get("MONGO_URI", "")
@@ -35,7 +35,10 @@ def home_page():
 def func1():
     """Function to handle GET and POST requests on /users route"""
     if request.method == "GET":
-        return jsonify({"Datetime": datetime.now(), "AllUsers": list(client.get_all_document())})
+        print(client.get_all_document())
+        return jsonify(
+            {"Datetime": datetime.now(), "AllUsers": client.get_all_document()}
+        )
 
     elif request.method == "POST":
         name: Optional[str] = request.form.get("name")
@@ -43,10 +46,19 @@ def func1():
         password: Optional[str] = request.form.get("password")
 
         if not name or not email or not password:
-            return jsonify({"Datetime": datetime.now(), "Error": "Please provide all the fields"}), 400
+            return (
+                jsonify(
+                    {
+                        "Datetime": datetime.now(),
+                        "Error": "Please provide all the fields",
+                    }
+                ),
+                400,
+            )
 
-        user = UserModel(name=name, email=email, password=password)
-        x: bool = client.insert_in_collection(user)
+        x: bool = client.insert_in_collection(
+            {"name": name, "email": email, "password": password}
+        )
 
         return jsonify({"Datetime": datetime.now(), "Succeed": x})
 
@@ -55,16 +67,18 @@ def func1():
 def func2(doc_id: str):
     """Function to handle GET, PUT and DELETE requests on /users/<string:doc_id> route"""
     if request.method == "GET":
-        return jsonify({"Datetime": datetime.now(), "User": client.get_one_document(doc_id)})
+        return jsonify(
+            {"Datetime": datetime.now(), "User": client.get_one_document(doc_id)}
+        )
 
     elif request.method == "PUT":
         name: str = request.form.get("name", "")
         email: str = request.form.get("email", "")
         password: str = request.form.get("password", "")
 
-        user = UserModel(name=name, email=email, password=password)
-
-        _: bool = client.update_one_document(doc_id, user)
+        _: bool = client.update_one_document(
+            doc_id, {"name": name, "email": email, "password": password}
+        )
         return jsonify({"Datetime": datetime.now(), "Updated": _})
 
     elif request.method == "DELETE":
