@@ -62,7 +62,8 @@ def func1():
         return jsonify({"Datetime": datetime.now(), "Succeed": x})
 
 
-@app.route("/users/<string:doc_id>", methods=["GET", "PUT", "DELETE"])  # type: ignore
+# type: ignore
+@app.route("/users/<string:doc_id>", methods=["GET", "PUT", "DELETE"])
 def func2(doc_id: str):
     """Function to handle GET, PUT and DELETE requests on /users/<string:doc_id> route"""
     if request.method == "GET":
