@@ -11,7 +11,7 @@ from api import Connection
 
 # Variables
 HOST: str = environ.get("MONGO_URI", "")
-PORT: int = int(environ.get("PORT", 5000))
+PORT: int = int(environ.get("PORT", 0))
 
 client: Connection = Connection(host=HOST)
 
