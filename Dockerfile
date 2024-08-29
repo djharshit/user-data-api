@@ -3,7 +3,7 @@ FROM python:3.11-alpine
 LABEL org.opencontainers.image.source="https://github.com/djharshit/user-data-api"
 LABEL maintainer="Harshit M"
 
-ARG PORT=${PORT}
+ARG PORT=5000
 
 WORKDIR /home/app
 

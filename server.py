@@ -23,7 +23,7 @@ if not client.is_connected:
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/")  # type: ignore
 def home_page():
     """
     Home page for documentation of the API
