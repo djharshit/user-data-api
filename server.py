@@ -4,6 +4,7 @@
 from datetime import datetime
 from os import environ
 from typing import Optional
+from sys import exit as sys_exit
 
 from flask import Flask, jsonify, render_template, request
 
@@ -17,7 +18,7 @@ client: Connection = Connection(host=HOST)
 
 if not client.is_connected:
     print("Could not connect to the database")
-    exit(1)
+    sys_exit(1)
 
 # Creating the Flask app
 app = Flask(__name__)
@@ -39,10 +40,21 @@ def func1():
             {"Datetime": datetime.now(), "AllUsers": client.get_all_document()}
         )
 
-    elif request.method == "POST":
-        name: Optional[str] = request.form.get("name")
-        email: Optional[str] = request.form.get("email")
-        password: Optional[str] = request.form.get("password")
+    if request.method == "POST":
+        if not request.is_json:
+            return (
+                jsonify(
+                    {
+                        "Datetime": datetime.now(),
+                        "Error": "Please provide the data in JSON format",
+                    }
+                ),
+                400,
+            )
+
+        name: Optional[str] = request.get_json().get("name")
+        email: Optional[str] = request.get_json().get("email")
+        password: Optional[str] = request.get_json().get("password")
 
         if not name or not email or not password:
             return (
@@ -61,6 +73,8 @@ def func1():
 
         return jsonify({"Datetime": datetime.now(), "Succeed": x})
 
+    return jsonify({"Datetime": datetime.now(), "Error": "Method not allowed"}), 405
+
 
 @app.route("/users/<string:doc_id>", methods=["GET", "PUT", "DELETE"])  # type: ignore
 def func2(doc_id: str):
@@ -70,19 +84,32 @@ def func2(doc_id: str):
             {"Datetime": datetime.now(), "User": client.get_one_document(doc_id)}
         )
 
-    elif request.method == "PUT":
-        name: str = request.form.get("name", "")
-        email: str = request.form.get("email", "")
-        password: str = request.form.get("password", "")
+    if request.method == "PUT":
+        if not request.is_json:
+            return (
+                jsonify(
+                    {
+                        "Datetime": datetime.now(),
+                        "Error": "Please provide the data in JSON format",
+                    }
+                ),
+                400,
+            )
+
+        name: Optional[str] = request.get_json().get("name")
+        email: Optional[str] = request.get_json().get("email")
+        password: Optional[str] = request.get_json().get("password")
 
         _: bool = client.update_one_document(
             doc_id, {"name": name, "email": email, "password": password}
         )
         return jsonify({"Datetime": datetime.now(), "Updated": _})
 
-    elif request.method == "DELETE":
+    if request.method == "DELETE":
         _ = client.delete_one_document(doc_id)
         return jsonify({"Datetime": datetime.now(), "Deleted": _})
+
+    return jsonify({"Datetime": datetime.now(), "Error": "Method not allowed"}), 405
 
 
 if __name__ == "__main__":

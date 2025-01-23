@@ -87,7 +87,9 @@ class Connection:
         except bsonErrors.InvalidId:
             return False
 
-    def update_one_document(self, doc_id: str, document: Dict[str, str]) -> bool:
+    def update_one_document(
+        self, doc_id: str, document: Dict[str, Optional[str]]
+    ) -> bool:
         """Updates a document in the collection
 
         Args:
